@@ -7,44 +7,6 @@ datasource db {
   provider = "sqlite"
 }
 
-model Contact {
-  id        String   @id @default(uuid())
-  phone     String   @unique
-  name      String?
-  amount    Float?   // Aidat amounts or generic tags
-  dateAdded DateTime @default(now())
-  
-  // Relations
-  chats     Chat[]
-}
-
-model Chat {
-  id            String   @id @default(uuid())
-  contactId     String?
-  whatsappId    String   @unique // The serialized jid from WhatsApp
-  name          String?
-  isGroup       Boolean  @default(false)
-  unreadCount   Int      @default(0)
-  lastMessage   String?
-  lastTimestamp DateTime?
-  
-  contact       Contact? @relation(fields: [contactId], references: [id])
-  messages      Message[]
-}
-
-model Message {
-  id          String   @id @default(uuid())
-  chatId      String
-  messageId   String   @unique // WhatsApp message ID
-  text        String?
-  fromMe      Boolean  @default(false)
-  senderName  String?  // For group messages: name of the sender
-  status      String   @default("SENT") // SENT, DELIVERED, READ
-  timestamp   DateTime @default(now())
-  
-  chat        Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
-}
-
 model ScheduledMessage {
   id          String   @id @default(uuid())
   toPhone     String
@@ -63,10 +25,8 @@ model AutoReplyRule {
   createdAt   DateTime @default(now())
 }
 
-model SystemStat {
-  id              String   @id @default(uuid())
-  messagesSent    Int      @default(0)
-  messagesRcvd    Int      @default(0)
-  activeChats     Int      @default(0)
-  updatedAt       DateTime @updatedAt
+model AppSetting {
+  key         String   @id
+  value       String
+  updatedAt   DateTime @updatedAt
 }

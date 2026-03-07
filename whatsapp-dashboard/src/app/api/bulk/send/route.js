@@ -47,7 +47,13 @@ async function processBulkSend(recipients, message, minDelay, maxDelay) {
             // Format number if needed (ensure it has @c.us)
             let chatId = recipient;
             if (!chatId.includes('@')) {
-                chatId = `${chatId.replace(/\D/g, '')}@c.us`;
+                let clean = chatId.replace(/\D/g, '');
+                if (clean.length === 11 && clean.startsWith('05')) {
+                    clean = '90' + clean.substring(1);
+                } else if (clean.length === 10 && clean.startsWith('5')) {
+                    clean = '90' + clean;
+                }
+                chatId = `${clean}@c.us`;
             }
 
             await client.sendMessage(chatId, message);

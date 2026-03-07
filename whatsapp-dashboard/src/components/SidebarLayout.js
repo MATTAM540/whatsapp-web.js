@@ -17,10 +17,7 @@ import {
 
 const MENU_ITEMS = [
     { name: "Ana Sayfa", path: "/", icon: <LayoutDashboard size={20} /> },
-    { name: "Kişi İşlemleri", path: "/contacts", icon: <Users size={20} /> },
-    { name: "Sohbetler & Yönetim", path: "/chats", icon: <MessageSquare size={20} /> },
     { name: "Toplu Mesaj Gönder", path: "/bulk", icon: <MessageSquare size={20} className="text-green-500" /> },
-    { name: "Kanal İşlemleri", path: "/channels", icon: <FileBox size={20} /> },
     { name: "Otomasyon & Bot", path: "/automation", icon: <Bot size={20} /> },
     { name: "Sistem Ayarları", path: "/settings", icon: <Settings size={20} /> },
 ];

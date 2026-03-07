@@ -47,6 +47,8 @@ whatsapp-dashboard/src/generated/prisma
 whatsapp-dashboard/.wwebjs_auth/
 whatsapp-dashboard/prisma/dev.db
 whatsapp-dashboard/prisma/dev.db-journal
+whatsapp-dashboard/dev.db
+whatsapp-dashboard/dev.db-journal
 whatsapp-dashboard/.vscode/
 whatsapp-dashboard/.idea/
 whatsapp-dashboard/temp/
@@ -74,3 +76,4 @@ yarn-error.log*
 .node_repl_history
 tmp/
 temp/
+whatsapp-dashboard/schema.sql

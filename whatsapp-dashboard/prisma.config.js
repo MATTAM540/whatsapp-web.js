@@ -4,6 +4,6 @@ dotenv.config()
 
 export default defineConfig({
     datasource: {
-        url: process.env.LOCAL_DB_URL,
+        url: `${process.env.TURSO_DATABASE_URL}?authToken=${process.env.TURSO_AUTH_TOKEN}`,
     },
 })

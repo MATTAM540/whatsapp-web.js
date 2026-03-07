@@ -2,22 +2,33 @@
 
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
-import { QRCodeSVG } from "qrcode.react"; // We will install this for better Nextjs qr rendering, or use the base64 from server
-import { ShieldAlert, ShieldCheck, RefreshCw, LogOut } from "lucide-react";
+import { ShieldAlert, ShieldCheck, RefreshCw, LogOut, PhoneOff } from "lucide-react";
 
 export default function SettingsPage() {
     const [waStatus, setWaStatus] = useState("DISCONNECTED");
     const [qrCodeData, setQrCodeData] = useState(null);
     const [socket, setSocket] = useState(null);
+    const [autoReject, setAutoReject] = useState(false);
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
+        // Fetch Settings
+        fetch('/api/settings')
+            .then(res => res.json())
+            .then(data => {
+                if (data.autoRejectCalls === "true") {
+                    setAutoReject(true);
+                }
+            })
+            .catch(err => console.error("Error fetching settings:", err));
+
         // Connect to our custom Next.js server's socket.io instance
         const socketInstance = io(window.location.origin);
         setSocket(socketInstance);
 
         socketInstance.on("wa_status", (data) => {
             setWaStatus(data.status);
-            setQrCodeData(data.qr); // Base64 dataURL from the server
+            setQrCodeData(data.qr);
         });
 
         return () => {
@@ -28,6 +39,25 @@ export default function SettingsPage() {
     const handleLogout = () => {
         if (socket) {
             socket.emit("wa_command", { command: "logout" });
+        }
+    };
+
+    const toggleAutoReject = async () => {
+        setSaving(true);
+        const newValue = !autoReject;
+        setAutoReject(newValue);
+
+        try {
+            await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ autoRejectCalls: newValue ? "true" : "false" })
+            });
+        } catch (err) {
+            console.error("Error saving setting:", err);
+            setAutoReject(!newValue); // revert on error
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -52,7 +82,7 @@ export default function SettingsPage() {
                                 </p>
                                 <button
                                     onClick={handleLogout}
-                                    className="btn-primary bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 mt-4 mx-auto gap-2"
+                                    className="px-4 py-2 bg-red-50 text-red-600 rounded flex items-center hover:bg-red-100 border border-red-200 mt-4 mx-auto gap-2"
                                 >
                                     <LogOut size={18} />
                                     Oturumu Kapat
@@ -77,14 +107,38 @@ export default function SettingsPage() {
                     </div>
                 </div>
 
-                {/* System Info Card */}
-                <div className="card p-6 border-[#e2e8f0]">
-                    <h2 className="text-lg font-semibold text-[#1c2434] mb-4">Sistem Bilgileri</h2>
-                    <div className="space-y-4">
-                        <InfoRow label="Oturum Kaydetme" value="Aktif (LocalAuth)" />
-                        <InfoRow label="Sunucu Durumu" value="Çalışıyor (Node.js)" />
-                        <InfoRow label="Puppeteer Modu" value="Headless (--no-sandbox)" />
-                        <InfoRow label="Arayüz Versiyonu" value="v1.0.0" />
+                <div className="space-y-6">
+                    {/* Settings Toggles Card */}
+                    <div className="card p-6 border-[#e2e8f0]">
+                        <h2 className="text-lg font-semibold text-[#1c2434] mb-4">Genel Ayarlar</h2>
+
+                        <div className="flex items-center justify-between p-4 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg">
+                            <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-lg ${autoReject ? 'bg-red-100 text-red-600' : 'bg-slate-200 text-slate-500'}`}>
+                                    <PhoneOff size={20} />
+                                </div>
+                                <div>
+                                    <p className="font-medium text-[#1c2434] text-sm">Gelen Aramaları Otomatik Reddet</p>
+                                    <p className="text-xs text-[#64748b] mt-0.5">Arama gediğinde bot otomatik olarak meşgule atar.</p>
+                                </div>
+                            </div>
+
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" className="sr-only peer" checked={autoReject} onChange={toggleAutoReject} disabled={saving} />
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#3c50e0]"></div>
+                            </label>
+                        </div>
+                    </div>
+
+                    {/* System Info Card */}
+                    <div className="card p-6 border-[#e2e8f0]">
+                        <h2 className="text-lg font-semibold text-[#1c2434] mb-4">Sistem Bilgileri</h2>
+                        <div className="space-y-4">
+                            <InfoRow label="Oturum Kaydetme" value="Aktif (LocalAuth)" />
+                            <InfoRow label="Sunucu Durumu" value="Çalışıyor (Node.js)" />
+                            <InfoRow label="Puppeteer Modu" value="Headless (--no-sandbox)" />
+                            <InfoRow label="Arayüz Versiyonu" value="v2.0.0 (Lite)" />
+                        </div>
                     </div>
                 </div>
             </div>

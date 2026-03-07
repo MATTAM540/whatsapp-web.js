@@ -25,9 +25,15 @@ export async function POST(request) {
         }
 
         // Format phone for WhatsApp (ensure it ends with @c.us)
-        let whatsappPhone = toPhone.replace(/[^0-9]/g, '');
-        if (!whatsappPhone.endsWith('@c.us')) {
-            whatsappPhone = whatsappPhone + '@c.us';
+        let whatsappPhone = toPhone;
+        if (!whatsappPhone.includes('@')) {
+            let clean = whatsappPhone.replace(/\D/g, '');
+            if (clean.length === 11 && clean.startsWith('05')) {
+                clean = '90' + clean.substring(1);
+            } else if (clean.length === 10 && clean.startsWith('5')) {
+                clean = '90' + clean;
+            }
+            whatsappPhone = `${clean}@c.us`;
         }
 
         const scheduled = await db.scheduledMessage.create({

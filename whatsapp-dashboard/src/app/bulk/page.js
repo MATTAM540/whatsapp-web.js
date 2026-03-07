@@ -12,21 +12,10 @@ export default function BulkMessagePage() {
     const [isSending, setIsSending] = useState(false);
     const [logs, setLogs] = useState([]);
     const [progress, setProgress] = useState({ current: 0, total: 0 });
-    const [contacts, setContacts] = useState([]);
-    const [showContactSelector, setShowContactSelector] = useState(false);
     const socketRef = useRef(null);
     const logEndRef = useRef(null);
 
     useEffect(() => {
-        // Fetch contacts for selector
-        fetch("/api/contacts")
-            .then(res => res.json())
-            .then(data => {
-                if (!Array.isArray(data)) return;
-                setContacts(data);
-            })
-            .catch(err => console.error("Failed to fetch contacts", err));
-
         // Socket connection
         socketRef.current = io(window.location.origin);
 
@@ -95,13 +84,6 @@ export default function BulkMessagePage() {
         }
     };
 
-    const addContactToRecipients = (phone) => {
-        const currentRecipients = recipients.split("\n").map(r => r.trim()).filter(r => r !== "");
-        if (!currentRecipients.includes(phone)) {
-            setRecipients(prev => prev ? `${prev}\n${phone}` : phone);
-        }
-    };
-
     const clearLogs = () => setLogs([]);
 
     return (
@@ -125,33 +107,7 @@ export default function BulkMessagePage() {
                                 <Users size={16} />
                                 Alıcılar (Her satıra bir numara)
                             </label>
-                            <button
-                                onClick={() => setShowContactSelector(!showContactSelector)}
-                                className="text-xs font-semibold text-[#3c50e0] hover:underline"
-                            >
-                                Kişilerden Seç
-                            </button>
                         </div>
-
-                        {showContactSelector && (
-                            <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-dashed border-gray-300 max-h-48 overflow-y-auto space-y-2">
-                                {contacts.length === 0 ? (
-                                    <p className="text-xs text-gray-500 text-center">Kayıtlı kişi bulunamadı.</p>
-                                ) : (
-                                    contacts.map(contact => (
-                                        <div key={contact.id} className="flex items-center justify-between text-sm">
-                                            <span>{contact.name || contact.phone}</span>
-                                            <button
-                                                onClick={() => addContactToRecipients(contact.phone)}
-                                                className="px-2 py-1 bg-white border rounded hover:bg-gray-100 text-xs"
-                                            >
-                                                Ekle
-                                            </button>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        )}
 
                         <textarea
                             value={recipients}
@@ -266,8 +222,8 @@ export default function BulkMessagePage() {
                                     <div
                                         key={index}
                                         className={`p-3 rounded-lg text-sm border flex items-start gap-3 ${log.type === "success" ? "bg-green-50 border-green-100 text-green-700" :
-                                                log.type === "error" ? "bg-red-50 border-red-100 text-red-700" :
-                                                    "bg-blue-50 border-blue-100 text-blue-700"
+                                            log.type === "error" ? "bg-red-50 border-red-100 text-red-700" :
+                                                "bg-blue-50 border-blue-100 text-blue-700"
                                             }`}
                                     >
                                         <div className="mt-0.5">
