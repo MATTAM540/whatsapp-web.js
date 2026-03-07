@@ -77,3 +77,4 @@ yarn-error.log*
 tmp/
 temp/
 whatsapp-dashboard/schema.sql
+whatsapp-dashboard/CLOUDFLARE_SECURITY_GUIDE.md
