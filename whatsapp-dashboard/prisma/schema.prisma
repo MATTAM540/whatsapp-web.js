@@ -30,3 +30,10 @@ model AppSetting {
   value       String
   updatedAt   DateTime @updatedAt
 }
+
+model Contact {
+  id          String   @id @default(uuid())
+  name        String
+  phoneNumber String   @unique
+  createdAt   DateTime @default(now())
+}

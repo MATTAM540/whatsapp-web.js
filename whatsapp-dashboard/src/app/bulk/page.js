@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Send, Users, Clock, AlertCircle, CheckCircle2, Loader2, Play, Pause, Trash2 } from "lucide-react";
+import { Send, Users, Clock, AlertCircle, CheckCircle2, Loader2, Play, Pause, Trash2, UserPlus, CopyCheck } from "lucide-react";
 import { io } from "socket.io-client";
+import ContactPicker from "@/components/ContactPicker";
 
 export default function BulkMessagePage() {
     const [recipients, setRecipients] = useState("");
@@ -12,6 +13,8 @@ export default function BulkMessagePage() {
     const [isSending, setIsSending] = useState(false);
     const [logs, setLogs] = useState([]);
     const [progress, setProgress] = useState({ current: 0, total: 0 });
+    const [isPickerOpen, setIsPickerOpen] = useState(false);
+    
     const socketRef = useRef(null);
     const logEndRef = useRef(null);
 
@@ -49,24 +52,28 @@ export default function BulkMessagePage() {
     }, [logs]);
 
     const handleSend = async () => {
-        if (!recipients.trim() || !message.trim()) {
-            alert("Lütfen alıcıları ve mesajı girin.");
+        // Run duplicate check before sending
+        const cleanRecipients = getCleanRecipients();
+        if (cleanRecipients.length === 0) {
+            alert("Lütfen alıcıları girin.");
             return;
         }
 
-        const recipientList = recipients.split("\n").map(r => r.trim()).filter(r => r !== "");
-        if (recipientList.length === 0) return;
+        if (!message.trim()) {
+            alert("Lütfen mesajı girin.");
+            return;
+        }
 
         setIsSending(true);
         setLogs([]);
-        setProgress({ current: 0, total: recipientList.length });
+        setProgress({ current: 0, total: cleanRecipients.length });
 
         try {
             const res = await fetch("/api/bulk/send", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    recipients: recipientList,
+                    recipients: cleanRecipients,
                     message,
                     minDelay,
                     maxDelay
@@ -82,6 +89,25 @@ export default function BulkMessagePage() {
             console.error("Bulk send error:", err);
             setIsSending(false);
         }
+    };
+
+    const getCleanRecipients = () => {
+        const list = recipients.split("\n")
+            .map(r => r.trim().replace(/\D/g, ''))
+            .filter(r => r !== "");
+        return [...new Set(list)]; // Deduplicate
+    };
+
+    const cleanDuplicates = () => {
+        const list = getCleanRecipients();
+        setRecipients(list.join("\n"));
+    };
+
+    const handleContactsSelected = (newNumbers) => {
+        setRecipients(prev => {
+            const current = prev.trim();
+            return current ? `${current}\n${newNumbers}` : newNumbers;
+        });
     };
 
     const clearLogs = () => setLogs([]);
@@ -102,23 +128,43 @@ export default function BulkMessagePage() {
                 {/* Sol Taraf: Form */}
                 <div className="card p-6 space-y-6 bg-white border border-[#e2e8f0]">
                     <div>
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-4">
                             <label className="text-sm font-semibold text-[#64748b] flex items-center gap-2">
                                 <Users size={16} />
                                 Alıcılar (Her satıra bir numara)
                             </label>
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={cleanDuplicates}
+                                    className="text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1 bg-orange-50 px-2 py-1 rounded"
+                                    title="Mükerrer ve geçersiz karakterleri temizle"
+                                >
+                                    <CopyCheck size={14} />
+                                    Temizle
+                                </button>
+                                <button 
+                                    onClick={() => setIsPickerOpen(true)}
+                                    className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 px-2 py-1 rounded"
+                                >
+                                    <UserPlus size={14} />
+                                    Rehberden Seç
+                                </button>
+                            </div>
                         </div>
 
                         <textarea
                             value={recipients}
                             onChange={(e) => setRecipients(e.target.value)}
-                            className="w-full h-40 font-mono text-sm"
+                            className="w-full h-48 font-mono text-sm focus:ring-2 focus:ring-blue-500 bg-slate-50 border-slate-200"
                             placeholder="905XXXXXXXXX&#10;905XXXXXXXXX"
                             disabled={isSending}
                         />
-                        <p className="text-xs text-[#64748b] mt-1">
-                            Toplam {recipients.split("\n").filter(r => r.trim()).length} alıcı belirlendi.
-                        </p>
+                        <div className="flex items-center justify-between mt-2">
+                            <p className="text-xs text-[#64748b]">
+                                Satır sayısı: {recipients.split("\n").filter(r => r.trim()).length} | Benzersiz: {getCleanRecipients().length}
+                            </p>
+                            <p className="text-[10px] text-gray-400 italic">Excel'den yapıştırabilirsiniz.</p>
+                        </div>
                     </div>
 
                     <div>
@@ -129,7 +175,7 @@ export default function BulkMessagePage() {
                         <textarea
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
-                            className="w-full h-32"
+                            className="w-full h-32 focus:ring-2 focus:ring-blue-500 bg-slate-50 border-slate-200"
                             placeholder="Gönderilecek mesajı buraya yazın..."
                             disabled={isSending}
                         />
@@ -145,7 +191,7 @@ export default function BulkMessagePage() {
                                 type="number"
                                 value={minDelay}
                                 onChange={(e) => setMinDelay(parseInt(e.target.value))}
-                                className="w-full"
+                                className="w-full bg-slate-50 border-slate-200"
                                 min="1"
                                 disabled={isSending}
                             />
@@ -159,7 +205,7 @@ export default function BulkMessagePage() {
                                 type="number"
                                 value={maxDelay}
                                 onChange={(e) => setMaxDelay(parseInt(e.target.value))}
-                                className="w-full"
+                                className="w-full bg-slate-50 border-slate-200"
                                 min="2"
                                 disabled={isSending}
                             />
@@ -243,6 +289,13 @@ export default function BulkMessagePage() {
                     </div>
                 </div>
             </div>
+
+            {isPickerOpen && (
+                <ContactPicker 
+                    onClose={() => setIsPickerOpen(false)} 
+                    onSelect={handleContactsSelected}
+                />
+            )}
         </div>
     );
 }
