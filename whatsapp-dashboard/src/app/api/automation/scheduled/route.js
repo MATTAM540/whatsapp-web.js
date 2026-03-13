@@ -32,6 +32,8 @@ export async function POST(request) {
         }
 
         const results = [];
+        const batchId = phones.length > 1 ? crypto.randomUUID() : null;
+
         for (const phone of phones) {
             // Format phone for WhatsApp (ensure it ends with @c.us)
             let whatsappPhone = phone;
@@ -52,7 +54,8 @@ export async function POST(request) {
                     sendAt: new Date(sendAt),
                     status: 'PENDING',
                     minDelay: minDelay ? parseInt(minDelay) : 2,
-                    maxDelay: maxDelay ? parseInt(maxDelay) : 5
+                    maxDelay: maxDelay ? parseInt(maxDelay) : 5,
+                    batchId: batchId
                 }
             });
             results.push(scheduled);

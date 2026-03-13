@@ -14,6 +14,7 @@ model ScheduledMessage {
   status      String   @default("PENDING") // PENDING, SENT, FAILED
   minDelay    Int     @default(2)
   maxDelay    Int     @default(5)
+  batchId     String?
   createdAt   DateTime @default(now())
 }
 

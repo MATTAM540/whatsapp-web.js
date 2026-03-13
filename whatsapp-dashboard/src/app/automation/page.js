@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import {
     Bot, MessageSquareReply, CalendarClock, Plus, Trash2, Power, PowerOff,
-    Clock, Send, Loader2, CheckCircle2, XCircle, AlertCircle, X, UserPlus
+    Clock, Send, Loader2, CheckCircle2, XCircle, AlertCircle, X, UserPlus,
+    ChevronDown, ChevronUp, Layers
 } from "lucide-react";
 import ContactPicker from "@/components/ContactPicker";
 
@@ -43,6 +44,11 @@ export default function AutomationPage() {
     // Active tab
     const [activeTab, setActiveTab] = useState('auto-reply');
     const [isPickerOpen, setIsPickerOpen] = useState(false);
+    const [expandedBatches, setExpandedBatches] = useState({});
+
+    const toggleBatch = (batchId) => {
+        setExpandedBatches(prev => ({ ...prev, [batchId]: !prev[batchId] }));
+    };
 
     // ── Fetch Data ──
     const fetchRules = async () => {
@@ -176,6 +182,34 @@ export default function AutomationPage() {
         PENDING: { label: 'Bekliyor', icon: <Clock size={14} />, color: 'text-amber-600 bg-amber-50' },
         SENT: { label: 'Gönderildi', icon: <CheckCircle2 size={14} />, color: 'text-green-600 bg-green-50' },
         FAILED: { label: 'Başarısız', icon: <XCircle size={14} />, color: 'text-red-600 bg-red-50' }
+    };
+
+    const getGroupedScheduled = () => {
+        const groups = {};
+        const individual = [];
+
+        scheduled.forEach(msg => {
+            if (msg.batchId) {
+                if (!groups[msg.batchId]) {
+                    groups[msg.batchId] = {
+                        id: msg.batchId,
+                        isBatch: true,
+                        items: [],
+                        text: msg.text,
+                        sendAt: msg.sendAt,
+                        createdAt: msg.createdAt,
+                        minDelay: msg.minDelay,
+                        maxDelay: msg.maxDelay
+                    };
+                }
+                groups[msg.batchId].items.push(msg);
+            } else {
+                individual.push({ ...msg, isBatch: false });
+            }
+        });
+
+        const all = [...Object.values(groups), ...individual];
+        return all.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     };
 
     return (
@@ -476,7 +510,65 @@ export default function AutomationPage() {
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {scheduled.map(msg => {
+                            {getGroupedScheduled().map(group => {
+                                if (group.isBatch) {
+                                    const successCount = group.items.filter(i => i.status === 'SENT').length;
+                                    const failCount = group.items.filter(i => i.status === 'FAILED').length;
+                                    const pendingCount = group.items.filter(i => i.status === 'PENDING').length;
+                                    const isExpanded = expandedBatches[group.id];
+
+                                    return (
+                                        <div key={group.id} className="space-y-2">
+                                            <div className="card p-5 border-l-4 border-l-indigo-400 bg-indigo-50/30">
+                                                <div className="flex items-start justify-between gap-4">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
+                                                                <Layers size={14} />
+                                                                Toplu İşlem ({group.items.length} Numara)
+                                                            </span>
+                                                            <div className="flex gap-2">
+                                                                {successCount > 0 && <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full">✓ {successCount}</span>}
+                                                                {failCount > 0 && <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full">✗ {failCount}</span>}
+                                                                {pendingCount > 0 && <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">⌛ {pendingCount}</span>}
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-sm text-[#1c2434] line-clamp-2 mb-2">{group.text}</p>
+                                                        <div className="flex items-center gap-4 text-xs text-[#94a3b8]">
+                                                            <span className="flex items-center gap-1">
+                                                                <CalendarClock size={12} />
+                                                                Planlanan: {formatDateTR(group.sendAt)}
+                                                            </span>
+                                                            <span className="flex items-center gap-1 font-medium text-indigo-600 cursor-pointer hover:underline" onClick={() => toggleBatch(group.id)}>
+                                                                {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                                                {isExpanded ? 'Detayları Gizle' : 'Numaraları Göster'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {isExpanded && (
+                                                <div className="ml-6 space-y-2 animate-in slide-in-from-top-2">
+                                                    {group.items.map(msg => {
+                                                        const sc = statusConfig[msg.status] || statusConfig.PENDING;
+                                                        return (
+                                                            <div key={msg.id} className="card p-3 border-l-2 bg-white flex items-center justify-between gap-4 text-sm">
+                                                                <span className="font-mono text-[#64748b]">📞 {msg.toPhone.replace('@c.us', '')}</span>
+                                                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${sc.color}`}>
+                                                                    {sc.icon}
+                                                                    {sc.label}
+                                                                </span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                }
+
+                                const msg = group;
                                 const sc = statusConfig[msg.status] || statusConfig.PENDING;
                                 return (
                                     <div
