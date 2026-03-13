@@ -47,9 +47,13 @@ export default function SidebarLayout({ children }) {
 
             {/* Sidebar */}
             <aside className={`
-                bg-[#1c2434] text-[#8a99af] flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out z-40 relative
-                ${isOpen ? "translate-x-0 fixed inset-y-0 left-0" : "-translate-x-full absolute lg:relative lg:translate-x-0"}
-                ${isCollapsed ? "w-20" : "w-64"}
+                bg-[#1c2434] text-[#8a99af] flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out z-40
+                ${isOpen 
+                    ? "translate-x-0 fixed inset-y-0 left-0 shadow-2xl" 
+                    : "-translate-x-full fixed inset-y-0 left-0 lg:translate-x-0 lg:relative lg:inset-auto"
+                }
+                ${isCollapsed ? "lg:w-20" : "lg:w-64"}
+                w-64
             `}>
                 {/* Sidebar Header */}
                 <div className={`p-6 flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} border-b border-[#333a48]/50 min-h-[81px]`}>
