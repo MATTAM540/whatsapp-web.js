@@ -62,7 +62,7 @@ export default function SidebarLayout({ children }) {
                         <MessageSquare className="text-white" size={22} />
                     </div>
                     {!isCollapsed && (
-                        <h1 className="text-xl font-extrabold tracking-tight text-white drop-shadow-sm transition-opacity duration-300 overflow-hidden whitespace-nowrap">
+                        <h1 className="text-xl font-extrabold tracking-tight !text-white drop-shadow-sm transition-opacity duration-300 overflow-hidden whitespace-nowrap">
                             WA Yönetim
                         </h1>
                     )}
