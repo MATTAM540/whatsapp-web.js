@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import {
     Bot, MessageSquareReply, CalendarClock, Plus, Trash2, Power, PowerOff,
-    Clock, Send, Loader2, CheckCircle2, XCircle, AlertCircle, X
+    Clock, Send, Loader2, CheckCircle2, XCircle, AlertCircle, X, UserPlus
 } from "lucide-react";
+import ContactPicker from "@/components/ContactPicker";
 
 // Helper: UTC+3 offset for display
 function toLocalISO(date) {
@@ -45,6 +46,7 @@ export default function AutomationPage() {
 
     // Active tab
     const [activeTab, setActiveTab] = useState('auto-reply');
+    const [isPickerOpen, setIsPickerOpen] = useState(false);
 
     // ── Fetch Data ──
     const fetchRules = async () => {
@@ -155,6 +157,17 @@ export default function AutomationPage() {
         } catch (err) {
             console.error("Failed to delete schedule:", err);
         }
+    };
+
+    const handleContactsSelected = (newNumbers) => {
+        setScheduleForm(prev => {
+            const current = prev.toPhone.trim();
+            const updatedPhone = current ? `${current}\n${newNumbers}` : newNumbers;
+            return {
+                ...prev,
+                toPhone: updatedPhone
+            };
+        });
     };
 
     const triggerLabels = {
@@ -367,7 +380,17 @@ export default function AutomationPage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-[#64748b] mb-1.5">Telefon Numaraları</label>
+                                    <div className="flex items-center justify-between mb-1.5">
+                                        <label className="block text-sm font-medium text-[#64748b]">Telefon Numaraları</label>
+                                        <button 
+                                            type="button"
+                                            onClick={() => setIsPickerOpen(true)}
+                                            className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 px-2 py-1 rounded transition-colors"
+                                        >
+                                            <UserPlus size={14} />
+                                            Rehberden Seç
+                                        </button>
+                                    </div>
                                     <textarea
                                         value={scheduleForm.toPhone}
                                         onChange={(e) => setScheduleForm(p => ({ ...p, toPhone: e.target.value }))}
@@ -481,6 +504,12 @@ export default function AutomationPage() {
                         </div>
                     )}
                 </div>
+            )}
+            {isPickerOpen && (
+                <ContactPicker 
+                    onClose={() => setIsPickerOpen(false)} 
+                    onSelect={handleContactsSelected}
+                />
             )}
         </div>
     );
