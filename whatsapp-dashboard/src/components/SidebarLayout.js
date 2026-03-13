@@ -57,11 +57,11 @@ export default function SidebarLayout({ children }) {
             `}>
                 {/* Sidebar Header */}
                 <div className={`p-6 flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} border-b border-[#333a48]/50 min-h-[81px]`}>
-                    <div className={`flex-shrink-0 p-2 bg-[#3c50e0] rounded-lg shadow-lg shadow-[#3c50e0]/30 transition-all duration-300`}>
-                        <MessageSquare className="text-white" size={24} />
+                    <div className={`flex-shrink-0 p-2.5 bg-gradient-to-br from-[#25D366] to-[#128C7E] rounded-xl shadow-lg shadow-[#25D366]/20 transition-all duration-300`}>
+                        <MessageSquare className="text-white" size={22} />
                     </div>
                     {!isCollapsed && (
-                        <h1 className="text-xl font-bold text-white tracking-tight drop-shadow-md transition-opacity duration-300 overflow-hidden whitespace-nowrap">
+                        <h1 className="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-slate-400 drop-shadow-sm transition-opacity duration-300 overflow-hidden whitespace-nowrap">
                             WA Yönetim
                         </h1>
                     )}

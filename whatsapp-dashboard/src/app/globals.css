@@ -18,6 +18,9 @@
 
   --text-muted: #64748b;
   --text-dark: #0f172a;
+
+  --wa-green: #25D366;
+  --wa-dark-green: #128C7E;
 }
 
 @media (prefers-color-scheme: dark) {
