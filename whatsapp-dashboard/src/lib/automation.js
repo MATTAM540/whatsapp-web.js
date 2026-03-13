@@ -1,5 +1,5 @@
 import { db } from "./db.js";
-import { getClient } from "./whatsapp-client.js";
+import { getClient, getStatus } from "./whatsapp-client.js";
 
 // Hook this up inside whatsapp-client.js on every incoming message
 export async function handleAutoReply(msg) {
@@ -38,7 +38,8 @@ export async function handleAutoReply(msg) {
 // Run this every minute via setInterval in server.js
 export async function processScheduledMessages() {
     const client = getClient();
-    if (!client) return;
+    const status = getStatus();
+    if (!client || status !== "READY") return;
 
     try {
         const now = new Date();
@@ -53,7 +54,18 @@ export async function processScheduledMessages() {
             console.log(`[Scheduler] Processing ${pendingMsgs.length} scheduled message(s)...`);
         }
 
-        for (const msg of pendingMsgs) {
+        for (let i = 0; i < pendingMsgs.length; i++) {
+            const msg = pendingMsgs[i];
+            
+            // Wait for random delay (except for the first one if you want, but better to always delay if it's a batch)
+            // To match bulk send behavior: delay before each message if it's not the first ONE in this batch
+            if (i > 0) {
+                const min = msg.minDelay || 2;
+                const max = msg.maxDelay || 5;
+                const delay = Math.floor(Math.random() * (max - min + 1) + min) * 1000;
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+
             try {
                 await client.sendMessage(msg.toPhone, msg.text);
 

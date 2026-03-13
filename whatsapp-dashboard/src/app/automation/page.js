@@ -9,18 +9,14 @@ import ContactPicker from "@/components/ContactPicker";
 
 // Helper: UTC+3 offset for display
 function toLocalISO(date) {
-    // Convert to UTC+3 for input fields
+    // Standard way to get YYYY-MM-DDTHH:mm for datetime-local in user's system time
     const d = new Date(date);
-    const offset = 3 * 60; // UTC+3 in minutes
-    const local = new Date(d.getTime() + offset * 60 * 1000);
-    return local.toISOString().slice(0, 16);
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 }
 
 function fromLocalInput(datetimeStr) {
-    // The user enters time in UTC+3, convert to UTC for storage
-    const d = new Date(datetimeStr);
-    const offset = 3 * 60; // UTC+3 in minutes
-    return new Date(d.getTime() - offset * 60 * 1000);
+    // Standard way: browsers return local time string, new Date() converts to correct UTC
+    return new Date(datetimeStr);
 }
 
 function formatDateTR(dateStr) {
@@ -41,7 +37,7 @@ export default function AutomationPage() {
     const [scheduled, setScheduled] = useState([]);
     const [loadingScheduled, setLoadingScheduled] = useState(true);
     const [showScheduleForm, setShowScheduleForm] = useState(false);
-    const [scheduleForm, setScheduleForm] = useState({ toPhone: '', text: '', sendAt: '' });
+    const [scheduleForm, setScheduleForm] = useState({ toPhone: '', text: '', sendAt: '', minDelay: 2, maxDelay: 5 });
     const [savingSchedule, setSavingSchedule] = useState(false);
 
     // Active tab
@@ -138,7 +134,7 @@ export default function AutomationPage() {
                 })
             });
             if (res.ok) {
-                setScheduleForm({ toPhone: '', text: '', sendAt: '' });
+                setScheduleForm({ toPhone: '', text: '', sendAt: '', minDelay: 2, maxDelay: 5 });
                 setShowScheduleForm(false);
                 fetchScheduled();
             }
@@ -412,6 +408,32 @@ export default function AutomationPage() {
                                         required
                                     />
                                 </div>
+
+                                <div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-[#64748b] mb-1.5">Min. Gecikme (sn)</label>
+                                            <input
+                                                type="number"
+                                                value={scheduleForm.minDelay}
+                                                onChange={(e) => setScheduleForm(p => ({ ...p, minDelay: e.target.value }))}
+                                                className="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:ring-2 focus:ring-[#3c50e0] focus:border-transparent"
+                                                min="1"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-[#64748b] mb-1.5">Max. Gecikme (sn)</label>
+                                            <input
+                                                type="number"
+                                                value={scheduleForm.maxDelay}
+                                                onChange={(e) => setScheduleForm(p => ({ ...p, maxDelay: e.target.value }))}
+                                                className="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:ring-2 focus:ring-[#3c50e0] focus:border-transparent"
+                                                min="2"
+                                            />
+                                        </div>
+                                    </div>
+                                    <p className="text-[10px] text-[#94a3b8] mt-1.5 leading-tight">Gönderilecek kişi sayısı birden fazlaysa mesajlar arasına rastgele gecikme eklenir.</p>
+                                </div>
                             </div>
 
                             <div>
@@ -482,6 +504,10 @@ export default function AutomationPage() {
                                                     <span className="flex items-center gap-1">
                                                         <CalendarClock size={12} />
                                                         Gönderim: {formatDateTR(msg.sendAt)}
+                                                    </span>
+                                                    <span className="flex items-center gap-1">
+                                                        <Clock size={12} />
+                                                        Gecikme: {msg.minDelay}-{msg.maxDelay} sn
                                                     </span>
                                                     <span>
                                                         Oluşturma: {formatDateTR(msg.createdAt)}

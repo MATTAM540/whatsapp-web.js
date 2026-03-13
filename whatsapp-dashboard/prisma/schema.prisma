@@ -12,6 +12,8 @@ model ScheduledMessage {
   text        String
   sendAt      DateTime
   status      String   @default("PENDING") // PENDING, SENT, FAILED
+  minDelay    Int     @default(2)
+  maxDelay    Int     @default(5)
   createdAt   DateTime @default(now())
 }
 

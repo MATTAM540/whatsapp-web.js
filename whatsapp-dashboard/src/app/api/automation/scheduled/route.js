@@ -18,7 +18,7 @@ export async function GET() {
 export async function POST(request) {
     try {
         const body = await request.json();
-        const { toPhone, text, sendAt } = body;
+        const { toPhone, text, sendAt, minDelay, maxDelay } = body;
 
         if (!toPhone || !text || !sendAt) {
             return NextResponse.json({ error: 'Telefon, mesaj ve gönderim zamanı gereklidir' }, { status: 400 });
@@ -48,9 +48,11 @@ export async function POST(request) {
             const scheduled = await db.scheduledMessage.create({
                 data: {
                     toPhone: whatsappPhone,
-                    text,
+                    text: text,
                     sendAt: new Date(sendAt),
-                    status: 'PENDING'
+                    status: 'PENDING',
+                    minDelay: minDelay ? parseInt(minDelay) : 2,
+                    maxDelay: maxDelay ? parseInt(maxDelay) : 5
                 }
             });
             results.push(scheduled);
