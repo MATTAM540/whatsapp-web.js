@@ -25,9 +25,19 @@ export default function ContactsPage() {
         try {
             const res = await fetch("/api/contacts");
             const data = await res.json();
-            setContacts(data);
+            
+            if (Array.isArray(data)) {
+                setContacts(data);
+            } else if (data.error) {
+                setMessage({ type: "error", text: data.error });
+                setContacts([]);
+            } else {
+                setContacts([]);
+            }
         } catch (error) {
             console.error("Fetch error:", error);
+            setMessage({ type: "error", text: "Kişiler yüklenirken bir hata oluştu." });
+            setContacts([]);
         } finally {
             setLoading(false);
         }
@@ -89,9 +99,9 @@ export default function ContactsPage() {
         }
     };
 
-    const filteredContacts = contacts.filter(c => 
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        c.phoneNumber.includes(searchTerm)
+    const filteredContacts = (Array.isArray(contacts) ? contacts : []).filter(c => 
+        (c.name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) || 
+        (c.phoneNumber || "").includes(searchTerm)
     );
 
     return (
