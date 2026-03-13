@@ -10,6 +10,7 @@ export default function SettingsPage() {
     const [socket, setSocket] = useState(null);
     const [autoReject, setAutoReject] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     useEffect(() => {
         // Fetch Settings
@@ -29,6 +30,9 @@ export default function SettingsPage() {
         socketInstance.on("wa_status", (data) => {
             setWaStatus(data.status);
             setQrCodeData(data.qr);
+            if (data.status !== "AUTHENTICATED" && data.status !== "READY") {
+                setIsLoggingOut(false);
+            }
         });
 
         return () => {
@@ -38,6 +42,7 @@ export default function SettingsPage() {
 
     const handleLogout = () => {
         if (socket) {
+            setIsLoggingOut(true);
             socket.emit("wa_command", { command: "logout" });
         }
     };
@@ -82,10 +87,20 @@ export default function SettingsPage() {
                                 </p>
                                 <button
                                     onClick={handleLogout}
-                                    className="px-4 py-2 bg-red-50 text-red-600 rounded flex items-center hover:bg-red-100 border border-red-200 mt-4 mx-auto gap-2"
+                                    disabled={isLoggingOut}
+                                    className="px-4 py-2 bg-red-50 text-red-600 rounded flex items-center hover:bg-red-100 border border-red-200 mt-4 mx-auto gap-2 disabled:opacity-50"
                                 >
-                                    <LogOut size={18} />
-                                    Oturumu Kapat
+                                    {isLoggingOut ? (
+                                        <>
+                                            <RefreshCw size={18} className="animate-spin" />
+                                            Çıkış Yapılıyor...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <LogOut size={18} />
+                                            Oturumu Kapat
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         ) : waStatus === "QR_READY" && qrCodeData ? (

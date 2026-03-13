@@ -13,13 +13,31 @@ if (!globalThis.waClient) {
 let ioInstance = null;
 let qrCodeData = null;
 
-export function startWhatsAppService(io) {
-    ioInstance = io;
-    globalThis.socketIO = io;
+const broadcastStatus = () => {
+    if (globalThis.socketIO) {
+        globalThis.socketIO.emit("wa_status", { status: globalThis.waClientStatus, qr: qrCodeData });
+    }
+};
 
-    const broadcastStatus = () => {
-        ioInstance?.emit("wa_status", { status: globalThis.waClientStatus, qr: qrCodeData });
-    };
+async function destroyClient() {
+    if (globalThis.waClient) {
+        console.log("Destroying existing WhatsApp client...");
+        try {
+            await globalThis.waClient.destroy();
+        } catch (err) {
+            console.error("Error destroying client:", err);
+        }
+        globalThis.waClient = null;
+    }
+}
+
+export async function initWhatsAppClient() {
+    await destroyClient();
+
+    console.log("Initializing WhatsApp Client...");
+    globalThis.waClientStatus = "DISCONNECTED";
+    qrCodeData = null;
+    broadcastStatus();
 
     globalThis.waClient = new Client({
         authStrategy: new LocalAuth({
@@ -64,11 +82,15 @@ export function startWhatsAppService(io) {
         broadcastStatus();
     });
 
-    globalThis.waClient.on('disconnected', (reason) => {
-        console.log('Client was logged out', reason);
+    globalThis.waClient.on('disconnected', async (reason) => {
+        console.log('Client was logged out or disconnected:', reason);
         globalThis.waClientStatus = "DISCONNECTED";
         qrCodeData = null;
         broadcastStatus();
+        
+        // Auto-reinitialize to get a new QR code if it was a logout or critical failure
+        console.log("Restarting client in 5 seconds...");
+        setTimeout(() => initWhatsAppClient(), 5000);
     });
 
     // Handle incoming messages for Auto-Reply
@@ -96,12 +118,34 @@ export function startWhatsAppService(io) {
         }
     });
 
+    globalThis.waClient.initialize().catch(err => {
+        console.error("WhatsApp Initialization Error:", err);
+        globalThis.waClientStatus = "DISCONNECTED";
+        broadcastStatus();
+    });
+}
+
+export function startWhatsAppService(io) {
+    ioInstance = io;
+    globalThis.socketIO = io;
+
     io.on("connection", (socket) => {
         socket.emit("wa_status", { status: globalThis.waClientStatus, qr: qrCodeData });
 
         socket.on("wa_command", async (data) => {
+            console.log("Received command:", data.command);
             if (data.command === "logout" && globalThis.waClient) {
-                await globalThis.waClient.logout();
+                try {
+                    console.log("Attempting logout...");
+                    await globalThis.waClient.logout();
+                    console.log("Logout successful");
+                } catch (err) {
+                    console.error("Logout failed, forcing destruction:", err);
+                    await destroyClient();
+                    initWhatsAppClient();
+                }
+            } else if (data.command === "restart") {
+                initWhatsAppClient();
             }
         });
 
@@ -117,9 +161,8 @@ export function startWhatsAppService(io) {
         });
     });
 
-    globalThis.waClient.initialize().catch(err => {
-        console.error("WhatsApp Initialization Error:", err);
-    });
+    // Initial boot
+    initWhatsAppClient();
 }
 
 // Helper to access the client outside of initialization
