@@ -24,28 +24,39 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Telefon, mesaj ve gönderim zamanı gereklidir' }, { status: 400 });
         }
 
-        // Format phone for WhatsApp (ensure it ends with @c.us)
-        let whatsappPhone = toPhone;
-        if (!whatsappPhone.includes('@')) {
-            let clean = whatsappPhone.replace(/\D/g, '');
-            if (clean.length === 11 && clean.startsWith('05')) {
-                clean = '90' + clean.substring(1);
-            } else if (clean.length === 10 && clean.startsWith('5')) {
-                clean = '90' + clean;
-            }
-            whatsappPhone = `${clean}@c.us`;
+        // Split by comma or newline and filter empty strings
+        const phones = toPhone.split(/[,\n]/).map(p => p.trim()).filter(p => p !== '');
+        
+        if (phones.length === 0) {
+            return NextResponse.json({ error: 'Geçerli bir telefon numarası girin' }, { status: 400 });
         }
 
-        const scheduled = await db.scheduledMessage.create({
-            data: {
-                toPhone: whatsappPhone,
-                text,
-                sendAt: new Date(sendAt),
-                status: 'PENDING'
+        const results = [];
+        for (const phone of phones) {
+            // Format phone for WhatsApp (ensure it ends with @c.us)
+            let whatsappPhone = phone;
+            if (!whatsappPhone.includes('@')) {
+                let clean = whatsappPhone.replace(/\D/g, '');
+                if (clean.length === 11 && clean.startsWith('05')) {
+                    clean = '90' + clean.substring(1);
+                } else if (clean.length === 10 && clean.startsWith('5')) {
+                    clean = '90' + clean;
+                }
+                whatsappPhone = `${clean}@c.us`;
             }
-        });
 
-        return NextResponse.json(scheduled);
+            const scheduled = await db.scheduledMessage.create({
+                data: {
+                    toPhone: whatsappPhone,
+                    text,
+                    sendAt: new Date(sendAt),
+                    status: 'PENDING'
+                }
+            });
+            results.push(scheduled);
+        }
+
+        return NextResponse.json(results.length === 1 ? results[0] : { success: true, count: results.length });
     } catch (error) {
         console.error('API Error:', error);
         return NextResponse.json({ error: 'Failed to create scheduled message' }, { status: 500 });

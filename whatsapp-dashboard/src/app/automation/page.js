@@ -367,16 +367,16 @@ export default function AutomationPage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-[#64748b] mb-1.5">Telefon Numarası</label>
-                                    <input
-                                        type="text"
+                                    <label className="block text-sm font-medium text-[#64748b] mb-1.5">Telefon Numaraları</label>
+                                    <textarea
                                         value={scheduleForm.toPhone}
                                         onChange={(e) => setScheduleForm(p => ({ ...p, toPhone: e.target.value }))}
-                                        placeholder="905xxxxxxxxx"
-                                        className="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:ring-2 focus:ring-[#3c50e0] focus:border-transparent"
+                                        placeholder="905xxxxxxxxx&#10;905xxxxxxxxx"
+                                        className="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:ring-2 focus:ring-[#3c50e0] focus:border-transparent resize-none"
+                                        rows={3}
                                         required
                                     />
-                                    <p className="text-xs text-[#94a3b8] mt-1">Ülke kodu ile birlikte yazın (örn: 905551234567)</p>
+                                    <p className="text-xs text-[#94a3b8] mt-1">Birden fazla numara için alt alta veya virgül ile ayırarak yazın.</p>
                                 </div>
 
                                 <div>
