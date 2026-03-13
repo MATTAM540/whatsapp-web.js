@@ -45,7 +45,14 @@ export async function POST(req) {
         }
 
         // Normalize phone number (remove spaces, plus, etc.)
-        const normalizedPhone = phoneNumber.replace(/\D/g, '');
+        let normalizedPhone = phoneNumber.replace(/\D/g, '');
+
+        // Normalize Turkish numbers
+        if (normalizedPhone.startsWith('05') && normalizedPhone.length === 11) {
+            normalizedPhone = '90' + normalizedPhone.substring(1);
+        } else if (normalizedPhone.startsWith('5') && normalizedPhone.length === 10) {
+            normalizedPhone = '90' + normalizedPhone;
+        }
 
         const contact = await db.contact.create({
             data: {

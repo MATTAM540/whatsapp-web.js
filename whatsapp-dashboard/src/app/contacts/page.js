@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, UserPlus, Upload, Search, Trash2, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Users, UserPlus, Upload, Search, Trash2, Edit2, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 
 export default function ContactsPage() {
     const [contacts, setContacts] = useState([]);
@@ -9,6 +9,8 @@ export default function ContactsPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingContact, setEditingContact] = useState(null);
     
     const [newName, setNewName] = useState("");
     const [newPhone, setNewPhone] = useState("");
@@ -60,6 +62,64 @@ export default function ContactsPage() {
                 setNewName("");
                 setNewPhone("");
                 setIsAddModalOpen(false);
+                fetchContacts();
+            }
+        } catch (error) {
+            setMessage({ type: "error", text: "Bir hata oluştu" });
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleDeleteContact = async (id) => {
+        if (!confirm("Bu kişiyi silmek istediğinize emin misiniz?")) return;
+        
+        setActionLoading(true);
+        try {
+            const res = await fetch(`/api/contacts/${id}`, {
+                method: "DELETE"
+            });
+            const data = await res.json();
+            if (data.error) {
+                setMessage({ type: "error", text: data.error });
+            } else {
+                setMessage({ type: "success", text: "Kişi silindi" });
+                fetchContacts();
+            }
+        } catch (error) {
+            setMessage({ type: "error", text: "Bir hata oluştu" });
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleEditClick = (contact) => {
+        setEditingContact(contact);
+        setNewName(contact.name);
+        setNewPhone(contact.phoneNumber);
+        setIsEditModalOpen(true);
+    };
+
+    const handleUpdateContact = async (e) => {
+        e.preventDefault();
+        if (!editingContact) return;
+        
+        setActionLoading(true);
+        try {
+            const res = await fetch(`/api/contacts/${editingContact.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: newName, phoneNumber: newPhone })
+            });
+            const data = await res.json();
+            if (data.error) {
+                setMessage({ type: "error", text: data.error });
+            } else {
+                setMessage({ type: "success", text: "Kişi güncellendi" });
+                setNewName("");
+                setNewPhone("");
+                setIsEditModalOpen(false);
+                setEditingContact(null);
                 fetchContacts();
             }
         } catch (error) {
@@ -188,9 +248,22 @@ export default function ContactsPage() {
                                             {new Date(contact.createdAt).toLocaleDateString()}
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <button className="text-[#64748b] hover:text-red-500 transition-colors">
-                                                <Trash2 size={18} />
-                                            </button>
+                                            <div className="flex justify-end gap-2">
+                                                <button 
+                                                    onClick={() => handleEditClick(contact)}
+                                                    className="text-[#64748b] hover:text-blue-500 transition-colors p-1"
+                                                    title="Düzenle"
+                                                >
+                                                    <Edit2 size={18} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleDeleteContact(contact.id)}
+                                                    className="text-[#64748b] hover:text-red-500 transition-colors p-1"
+                                                    title="Sil"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -279,6 +352,50 @@ export default function ContactsPage() {
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Düzenleme Modalı */}
+            {isEditModalOpen && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+                        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                            <h3 className="text-lg font-bold text-[#1c2434]">Kişiyi Düzenle</h3>
+                            <button onClick={() => { setIsEditModalOpen(false); setEditingContact(null); }} className="text-gray-400 hover:text-gray-600">
+                                <AlertCircle className="rotate-45" size={24} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleUpdateContact} className="p-6 space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-[#64748b]">Ad Soyad</label>
+                                <input 
+                                    type="text" 
+                                    required 
+                                    value={newName}
+                                    onChange={(e) => setNewName(e.target.value)}
+                                    placeholder="Örn: Ahmet Yılmaz" 
+                                    className="w-full"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-[#64748b]">Telefon Numarası</label>
+                                <input 
+                                    type="text" 
+                                    required 
+                                    value={newPhone}
+                                    onChange={(e) => setNewPhone(e.target.value)}
+                                    placeholder="Örn: 905XXXXXXXXX" 
+                                    className="w-full"
+                                />
+                            </div>
+                            <div className="flex gap-3 pt-4">
+                                <button type="button" onClick={() => { setIsEditModalOpen(false); setEditingContact(null); }} className="btn-secondary flex-1">İptal</button>
+                                <button type="submit" disabled={actionLoading} className="btn-primary flex-1 flex items-center justify-center gap-2">
+                                    {actionLoading ? <Loader2 className="animate-spin" size={18} /> : "Güncelle"}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

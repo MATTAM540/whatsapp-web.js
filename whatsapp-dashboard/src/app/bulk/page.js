@@ -93,7 +93,16 @@ export default function BulkMessagePage() {
 
     const getCleanRecipients = () => {
         const list = recipients.split("\n")
-            .map(r => r.trim().replace(/\D/g, ''))
+            .map(r => {
+                let clean = r.trim().replace(/\D/g, '');
+                // Normalize Turkish numbers
+                if (clean.length === 11 && clean.startsWith('05')) {
+                    clean = '90' + clean.substring(1);
+                } else if (clean.length === 10 && clean.startsWith('5')) {
+                    clean = '90' + clean;
+                }
+                return clean;
+            })
             .filter(r => r !== "");
         return [...new Set(list)]; // Deduplicate
     };

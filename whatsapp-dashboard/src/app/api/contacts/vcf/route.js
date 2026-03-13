@@ -22,7 +22,16 @@ export async function POST(req) {
                 // Handle TEL;TYPE=CELL: or TEL: etc.
                 const match = line.match(/TEL.*:(.+)/);
                 if (match) {
-                    currentContact.phoneNumber = match[1].replace(/\D/g, '');
+                    let phoneNumber = match[1].replace(/\D/g, '');
+                    
+                    // Normalize Turkish numbers
+                    if (phoneNumber.startsWith('05') && phoneNumber.length === 11) {
+                        phoneNumber = '90' + phoneNumber.substring(1);
+                    } else if (phoneNumber.startsWith('5') && phoneNumber.length === 10) {
+                        phoneNumber = '90' + phoneNumber;
+                    }
+                    
+                    currentContact.phoneNumber = phoneNumber;
                 }
             } else if (line.startsWith("END:VCARD")) {
                 if (currentContact.name && currentContact.phoneNumber) {
