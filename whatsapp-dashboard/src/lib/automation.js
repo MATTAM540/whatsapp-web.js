@@ -3,7 +3,7 @@ import { getClient } from "./whatsapp-client.js";
 
 // Hook this up inside whatsapp-client.js on every incoming message
 export async function handleAutoReply(msg) {
-    if (msg.fromMe) return;
+    if (msg.fromMe || msg.from.endsWith('@g.us')) return;
 
     try {
         const rules = await db.autoReplyRule.findMany({
