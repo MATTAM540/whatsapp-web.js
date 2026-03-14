@@ -7,7 +7,30 @@ export async function GET() {
         const messages = await db.scheduledMessage.findMany({
             orderBy: { sendAt: 'asc' }
         });
-        return NextResponse.json(messages);
+
+        const contacts = await db.contact.findMany({
+            select: {
+                name: true,
+                phoneNumber: true
+            }
+        });
+
+        const contactMap = new Map(
+            contacts.map(contact => [contact.phoneNumber, contact.name])
+        );
+
+        const messagesWithContactName = messages.map(message => {
+            const normalizedPhone = message.toPhone
+                .replace('@c.us', '')
+                .replace(/\D/g, '');
+
+            return {
+                ...message,
+                contactName: contactMap.get(normalizedPhone) || null
+            };
+        });
+
+        return NextResponse.json(messagesWithContactName);
     } catch (error) {
         console.error('API Error:', error);
         return NextResponse.json({ error: 'Failed to fetch scheduled messages' }, { status: 500 });
