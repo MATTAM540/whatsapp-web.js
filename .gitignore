@@ -34,6 +34,7 @@ whatsapp-dashboard/.pnpm-debug.log*
 
 # whatsapp-dashboard env files
 whatsapp-dashboard/.env*
+!whatsapp-dashboard/.env.example
 
 # whatsapp-dashboard vercel
 whatsapp-dashboard/.vercel
@@ -73,6 +74,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .env*
+!whatsapp-dashboard/.env.example
 .node_repl_history
 tmp/
 temp/
