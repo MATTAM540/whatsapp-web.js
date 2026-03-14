@@ -1,36 +1,121 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WhatsApp Dashboard (Web GUI)
 
-## Getting Started
+Bu proje, **whatsapp-web.js** kütüphanesini kullanarak geliştirilen bir web arayüzüdür.
+Amaç; WhatsApp oturumunu QR ile yönetmek, mesaj otomasyonlarını tek bir panelden kullanmak ve planlı mesaj gönderimi yapmaktır.
 
-First, run the development server:
+## Özellikler
+
+- WhatsApp bağlantı durumu takibi (`DISCONNECTED`, `QR_READY`, `AUTHENTICATED`, `READY`)
+- QR kod ile giriş ve oturum yönetimi
+- Socket.io ile gerçek zamanlı durum güncellemeleri
+- Otomatik yanıt kuralları (EXACT_MATCH / CONTAINS / ALWAYS)
+- Planlı mesaj gönderimi (dakikalık scheduler)
+- Çağrı otomatik reddetme ayarı
+- Dashboard giriş endpoint’i (`APP_PASSWORD` ile basit koruma)
+
+## Teknoloji yığını
+
+- **Next.js** (App Router)
+- **Node.js HTTP server** + **Socket.io**
+- **whatsapp-web.js** + **Puppeteer**
+- **Prisma** + **LibSQL/Turso**
+
+## Gereksinimler
+
+- Node.js 18+
+- npm
+- Çalışan bir LibSQL/Turso veritabanı (veya `file:` URL ile lokal sqlite/libsql)
+
+## Kurulum
+
+```bash
+cd whatsapp-dashboard
+npm install
+```
+
+## Ortam değişkenleri
+
+Önce örnek dosyayı kopyalayın:
+
+```bash
+cp .env.example .env
+```
+
+Sonra `whatsapp-dashboard/.env` dosyasını aşağıdaki şekilde düzenleyin:
+
+```env
+# Dashboard giriş şifresi
+APP_PASSWORD=guclu-bir-sifre
+
+# LibSQL / Turso bağlantısı
+# Örnek (Turso): libsql://xxx.turso.io
+# Örnek (lokal): file:./dev.db
+TURSO_DATABASE_URL=libsql://<db-adresi>
+TURSO_AUTH_TOKEN=<token>
+
+# Opsiyonel
+PORT=3000
+NODE_ENV=development
+```
+
+> Not: Lokal kullanımda `TURSO_DATABASE_URL=file:./dev.db` tercih edebilirsiniz.
+
+## Veritabanı hazırlığı
+
+Prisma migration’larını uygulayın:
+
+```bash
+npx prisma migrate deploy
+```
+
+Geliştirme ortamında yeni migration üretmek için:
+
+```bash
+npx prisma migrate dev
+```
+
+## Çalıştırma
+
+Geliştirme modunda:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Uygulama varsayılan olarak `http://localhost:3000` adresinde açılır.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## İlk açılış akışı
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Dashboard’u açın.
+2. QR kod görünürse telefonunuzdan WhatsApp ile okutun.
+3. Durum `READY` olduğunda gönderim/otomasyon işlemleri aktif olur.
+4. Oturumu sonlandırınca sistem otomatik olarak yeniden başlatıp yeni QR üretir.
 
-## Learn More
+## Üretim (production)
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build
+npm run start
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Mimari notu
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Uygulama, standart `next dev` yerine `node server.js` ile başlar.
+- Bunun sebebi, aynı süreçte hem Next.js handler’ını hem de Socket.io + WhatsApp servis katmanını çalıştırmaktır.
+- `server.js`, WhatsApp servisini başlatır ve her 60 saniyede bir planlı mesaj kuyruğunu işler.
 
-## Deploy on Vercel
+## Sorun giderme
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **QR gelmiyor**: Uygulama loglarını kontrol edin; Puppeteer/WhatsApp oturum klasörü izinlerini doğrulayın.
+- **DB bağlantı hatası**: `TURSO_DATABASE_URL` ve `TURSO_AUTH_TOKEN` değerlerini kontrol edin.
+- **Giriş yapılandırma hatası**: `.env` içinde `APP_PASSWORD` tanımlı olmalı.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Güvenlik notu
+
+Bu proje temel dashboard koruması için tek bir `APP_PASSWORD` kullanır. İnternete açık bir ortamda kullanacaksanız ek olarak:
+
+- Reverse proxy + TLS
+- IP kısıtlama / VPN
+- Gelişmiş kimlik doğrulama
+
+önerilir.
