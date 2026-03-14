@@ -554,7 +554,7 @@ export default function AutomationPage() {
                                                         const sc = statusConfig[msg.status] || statusConfig.PENDING;
                                                         return (
                                                             <div key={msg.id} className="card p-3 border-l-2 bg-white flex items-center justify-between gap-4 text-sm">
-                                                                <span className="font-mono text-[#64748b]">📞 {msg.toPhone.replace('@c.us', '')}</span>
+                                                                <span className="text-[#64748b]">📞 {msg.contactName || msg.toPhone.replace('@c.us', '')}</span>
                                                                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${sc.color}`}>
                                                                     {sc.icon}
                                                                     {sc.label}
@@ -587,8 +587,8 @@ export default function AutomationPage() {
                                                         {sc.icon}
                                                         {sc.label}
                                                     </span>
-                                                    <span className="text-xs text-[#64748b] font-mono">
-                                                        📞 {msg.toPhone.replace('@c.us', '')}
+                                                    <span className="text-xs text-[#64748b]">
+                                                        📞 {msg.contactName || msg.toPhone.replace('@c.us', '')}
                                                     </span>
                                                 </div>
                                                 <p className="text-sm text-[#1c2434] whitespace-pre-wrap mb-2">{msg.text}</p>
